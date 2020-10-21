@@ -1,0 +1,5 @@
+streamlit==0.69.0
+plotly
+scipy
+nptdms
+
