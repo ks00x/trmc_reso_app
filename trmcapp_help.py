@@ -3,11 +3,20 @@ help = r'''
 
 # TRMC app help
 
+   
 Klaus Schwarzburg 2020, Helmholtz Zentrum Berlin      
 
-original IGOR script function from Tom Savenije group transcribed to a Python class
-by Klaus Schwarzburg 2020
+original IGOR script function from Tom Savenije group transcribed to a Python class   
 
+### usage tips
+* The default widget size is a bit 'Fisher Price' like... Decrease your browser windows zoom to make the widgets smaller (ctrl +/- or ctrl-mousewheel)
+* change the plot graph size in the sidebar
+* the plot is interactive and you can zoom in out and out and pan
+* the plot can be maximized: There is a 'fullscreen' tool at the very right side when you hover over the plot!
+* after a fit you can expand the fit results as text and can copy it
+
+
+ 
 
 
 ### default parameters for TRMC X-band (WR-90) cavity   
@@ -67,9 +76,14 @@ $$
 
 In the dark, the detector voltage is Vo. We make a Taylor expansion at V=Vo:  
 
-$$P(V_{0}+\Delta V) = P(V_{0}) + a n V_{0}^{n-1} \Delta V$$   
-$$\Delta P(V_{0}+\Delta V) = a n V_{0}^{n-1} \Delta V$$   
-
+$$
+P(V_{0}+\Delta V) = P(V_{0}) + a n V_{0}^{n-1} \Delta V
+$$   
+   
+$$
+\Delta P(V_{0}+\Delta V) = a n V_{0}^{n-1} \Delta V
+$$   
+   
 Finally we get:   
 
 $$
@@ -81,19 +95,27 @@ $$
 
 The semiconductor sample may be homogenously illuminated by lightpulses with a power density $P_{L}$ given in units of J/cm2. The sample fills the cavity with dimensions b = 10.2mm and a = 22.9mm (X-band) and it has a thickness of d. The RF electric field oscillates in the direction of the shorter side (b). If we assume that all photons having a wavelength $\lambda$ are absorbed, a carrier density of $\Delta N$ is created:
 
-$$\Delta N = \frac{P_{L} \lambda}{h c} \frac{1}{d}$$   
+$$
+\Delta N = \frac{P_{L} \lambda}{h c} \frac{1}{d}
+$$   
 
 With c=speed of light and h Plancks constant. The increase charge carrier count corresponds to a change in conductivity:
 
-$$\Delta\sigma = e \Delta N (\mu_{e} + \mu_{h})$$   
+$$
+\Delta\sigma = e \Delta N (\mu_{e} + \mu_{h})
+$$   
 
 With $\mu_{e} , \mu_{h}$ mobility of electrons and holes and e the elementary charge. To calculate the total conductance change $\Delta G$ the RF E-field is seeing, we need the area A perpendicular to the Field and thickness L of the sample in the direction of E:
 
-$$\Delta G = \Delta\sigma \frac{A}{L}$$   
+$$
+\Delta G = \Delta\sigma \frac{A}{L}
+$$   
 
 With A = a*d and L=b we get:
 
-$$\Delta G = \Delta\sigma \frac{a}{b} d = \Delta\sigma \beta d$$   
+$$
+\Delta G = \Delta\sigma \frac{a}{b} d = \Delta\sigma \beta d
+$$   
 
 With $\beta = a/b$ (=2.245 for X band)
 
@@ -103,15 +125,21 @@ With $\beta = a/b$ (=2.245 for X band)
 
 The sensitivty k-factor is defined by:
 
-$$k = \frac{\frac{\Delta P}{P}}{\Delta G}$$   
+$$
+k = \frac{\frac{\Delta P}{P}}{\Delta G}
+$$   
 
 With the formulas from above we can express this via measureable quantities and with a well defined reference sample with known mobility we can calculate k:
 
-$$k = \Delta V \frac{n}{V_{0}} \times \frac{h c}{\beta e (\mu_{e} + \mu_{h}) } \times \frac{1}{P_{L} \lambda}$$
+$$
+k = \Delta V \frac{n}{V_{0}} \times \frac{h c}{\beta e (\mu_{e} + \mu_{h}) } \times \frac{1}{P_{L} \lambda}
+$$
 
 If k is known , we can caclulate the sum of mobilities:
 
-$$(\mu_{e} + \mu_{h}) = \Delta V \frac{n}{V_{0}} \times \frac{h c}{\beta e } \times \frac{1}{P_{L} \lambda} \times \frac{1}{k}$$
+$$
+(\mu_{e} + \mu_{h}) = \Delta V \frac{n}{V_{0}} \times \frac{h c}{\beta e } \times \frac{1}{P_{L} \lambda} \times \frac{1}{k}
+$$
 
 
 

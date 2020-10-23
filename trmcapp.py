@@ -69,6 +69,8 @@ def parms_list(container,plist,kid=0):
 st.beta_set_page_config(layout='wide',initial_sidebar_state='collapsed')
 
 help = st.sidebar.button('Help')
+im_width = st.sidebar.number_input('image width',value=800)
+im_height = st.sidebar.number_input('image height',value=400)
 
 
 s11 = S11ghz()
@@ -85,7 +87,8 @@ c.set('sub_t',1,True) # by adding a substrate with eps=1 we account for the prop
 c.set('sub_epsr',1,True)
 c.set('sub_sig',0,True)
 
-state = SessionState.get(username='unknown',paramlist=c.plist)
+# we need the extra session state thing to feed the fitted parameters back  to the widgets
+state = SessionState.get(kfreq=8.5,paramlist=c.plist)
 c._plist[1:] = state.paramlist
 c._calc_reduced()
 
@@ -97,7 +100,9 @@ else :
 
     # set the order of gui elements:
     area_graph = st.beta_container()
-    datastream = st.file_uploader('ascii tab data with f in GHz')    
+    area_info = st.beta_container()
+    area_kfac = st.beta_container()
+    datastream = st.file_uploader('ascii tab data with f in GHz',)    
     area_control = st.beta_container()
     st.markdown('**parameters:**')
     area_parms = st.beta_container() 
@@ -107,10 +112,11 @@ else :
     extdata = []
     if datastream is not None:             
         datastream.seek(0)        
-        xyz = io.TextIOWrapper(datastream)
-        extdata = textdata.read_textdata(xyz)
-        extdata = np.array(extdata['data'])
-            
+        buf = datastream.read()
+        buf = io.BytesIO(buf)
+        stream = io.TextIOWrapper(buf)        
+        extdata = textdata.read_textdata(stream)
+        extdata = np.array(extdata['data'])            
 
     with area_control :
         c_cols = st.beta_columns(5)
@@ -121,13 +127,21 @@ else :
         fmax = c_cols[3].number_input('fmax',value=9.2,format='%1.4f')    
         fstep = c_cols[4].number_input('step',value=0.001,format='%1.4f')
 
+    with area_kfac :
+        kf = st.beta_expander('k-factor calculation')
+        kc = kf.beta_columns(4)
+        btn_kfac = kc[0].button('calc')
+        kfac_min = kc[1].checkbox('use min?',value=True)        
+        kfac_freq = kc[2].number_input('freq in GHz',value=state.kfreq,format='%1.4f')
+        kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.)
+    
 
     with area_graph:
 
         if True :        
             f = np.arange(fmin,fmax,fstep)
             y = c.calc(f)
-            fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'})
+            fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
             if len(extdata) > 1:                
                 fig.add_trace(go.Scatter(x=extdata[:,0], y=extdata[:,1],
                     mode='markers',
@@ -141,10 +155,25 @@ else :
                     mode='markers',
                     name='fit'),
                      )
+                    chisqr = ((yfit - extdata[:,1])**2).sum()
+                    results = area_info.beta_expander(f'fit results (chisqr = {chisqr:1.3})')
+                    results.write(c.plist)
 
-            st.plotly_chart(fig)
+            st.plotly_chart(fig)            
+            if btn_kfac :
+                if kfac_min:
+                    k = y.argmin()
+                    kfac_freq = f[k]
+                state.kfreq = kfac_freq                    
+                s11.layer_sig = kfac_sigma
+                kf = s11.kfactor(kfac_freq,rel_change=0.01)
+                area_kfac.markdown(f'kafactor @{kfac_freq:1.4}GHz is : {kf}')
+
+
+
+
         else:
-            fig = px.line(title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'})
+            fig = px.line(title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
             st.plotly_chart(fig)
             #st.markdown('no plot yet') # leaving the container emtpy causes weird problems!
 
