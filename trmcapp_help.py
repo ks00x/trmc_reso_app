@@ -8,11 +8,14 @@ Klaus Schwarzburg 2020, Helmholtz Zentrum Berlin
 
 original IGOR script function from Tom Savenije's group transcribed to a Python class   
    
-The model describes a 2-layer sample stack inside a microwave cavity. The 2 sample layers are refered to as substrate and sample layer. From the modeling side, both are represented by the same model and parameters: a thickness, a dieelectric contant and a conductivity. A typical example is a thin conducting layer on a thick glass substrate. By setting on of the layers to thickness=0, the model reduces to a 1 layer model.    
+The model describes a 2-layer sample stack inside a microwave cavity. The 2 sample layers are refered to as substrate and sample layer. From the modeling side, both are represented by the same model and parameters: a thickness, a dieelectric contant and a conductivity. A typical example is a thin conducting layer on a thick glass substrate. By setting one of the layers to thickness=0, the model reduces to a 1 layer model.    
 
 The k-factor is calculated with the formulas below and by setting the 'layer' conductivity to the given value and changing it by 1% to create a $\Delta$G.
 
 ### usage tips
+* the position of the resonance peak is mainly defined by the cavity dimensions and by the sample/layer dieelectric constant and the thickness of the layers. 
+* The conductivity parameters of sample and cavity define the depth of the resonance curve
+* Before you press fit, make sure that the model function peak has some overlap with the frequency range of your uploaded data! Otherwisae the fit is likely to fail.
 * a 'fixed' model parameter is held contant during the fit
 * The default widget size is a bit 'Fisher Price' like... Decrease your browser windows zoom to make the widgets smaller (ctrl +/- or ctrl-mousewheel)
 * change the plot graph size in the sidebar

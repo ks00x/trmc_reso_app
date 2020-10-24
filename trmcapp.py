@@ -1,10 +1,10 @@
 import numpy as np
 import math
-import textdata
 import pathlib
 import io
 
-import dataimport as di
+# a few custom files are used here:
+import textdata
 import physbits
 from trmc_network import S11ghz
 from curvefit_ks import curve_fit
@@ -152,8 +152,6 @@ else : # do some work!
         kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.)
 
 
-             
-
     # here is the action part:    
     f = np.arange(state.fmin,state.fmax,state.fstep)
     y = c.calc(f)
@@ -186,11 +184,8 @@ else : # do some work!
         s11.layer_sig = kfac_sigma
         kf = s11.kfactor(kfac_freq,rel_change=0.01)
         area_kfac.markdown(f'k-factor @{kfac_freq:1.4}GHz is : {kf}')
-
     
-    parms_list(area_parms,state.paramlist,kid=10000)    
-    #c._calc_reduced()
-
+    parms_list(area_parms,state.paramlist,kid=10000)        
     
 state.sync()
 
