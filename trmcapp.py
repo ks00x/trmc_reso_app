@@ -1,12 +1,14 @@
-import physbits
 import numpy as np
 import math
-import dataimport as di
 import textdata
 import pathlib
 import io
+
+import dataimport as di
+import physbits
 from trmc_network import S11ghz
 from curvefit_ks import curve_fit
+
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -79,7 +81,7 @@ im_height = st.sidebar.number_input('image height',value=400)
 # init the math
 s11 = S11ghz()
 c = curve_fit(s11_func)
-c.set('d1',35.825,False)
+c.set('d1',35.825,True)
 c.set('d2',11,True)
 c.set('d_iris',9.6,False)
 c.set('loss_fac',1e-7,False)
@@ -88,12 +90,13 @@ c.set('layer_t',0.001,True)
 c.set('layer_epsr',1,True)
 c.set('layer_sig',0,True)
 c.set('sub_t',1,True) # by adding a substrate with eps=1 we account for the proper total cavity length
-c.set('sub_epsr',1,True)
+c.set('sub_epsr',1,False)
 c.set('sub_sig',0,True)
 
 # we need the extra session state thing to feed the fitted parameters back  to the widgets
+# not sure why the explicit state for fmin,fmax,fstep is needed, bug?
 state = SessionStateX._get_state()
-state(kfreq=8.5,paramlist=c.plist,fmin=8.,fmax=9.5,fstep=0.001)
+state(kfreq=8.5,paramlist=c.plist,fmin=8.,fmax=9.1,fstep=0.001) # class __call__ method
 
 print(state.kfreq)
 print('\n')
@@ -111,9 +114,9 @@ elif show_source:
         scode = '```' + fp.read() + '```'
         st.markdown(scode)
 
-else :
+else : # do some work!
 
-    # set the order of gui elements:
+    # set the order of gui elements by defining containers:
     area_graph = st.beta_container()
     area_info = st.beta_container()
     area_kfac = st.beta_container()
@@ -123,7 +126,7 @@ else :
     area_parms = st.beta_container() 
     
     extdata = []
-    if datastream is not None:             
+    if datastream is not None: # process uploaded file            
         datastream.seek(0)        
         buf = datastream.read()
         buf = io.BytesIO(buf)
