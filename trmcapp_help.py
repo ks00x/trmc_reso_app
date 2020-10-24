@@ -6,14 +6,20 @@ help = r'''
    
 Klaus Schwarzburg 2020, Helmholtz Zentrum Berlin      
 
-original IGOR script function from Tom Savenije group transcribed to a Python class   
+original IGOR script function from Tom Savenije's group transcribed to a Python class   
+   
+The model describes a 2-layer sample stack inside a microwave cavity. The 2 sample layers are refered to as substrate and sample layer. From the modeling side, both are represented by the same model and parameters: a thickness, a dieelectric contant and a conductivity. A typical example is a thin conducting layer on a thick glass substrate. By setting on of the layers to thickness=0, the model reduces to a 1 layer model.    
+
+The k-factor is calculated with the formulas below and by setting the 'layer' conductivity to the given value and changing it by 1% to create a $\Delta$G.
 
 ### usage tips
+* a 'fixed' model parameter is held contant during the fit
 * The default widget size is a bit 'Fisher Price' like... Decrease your browser windows zoom to make the widgets smaller (ctrl +/- or ctrl-mousewheel)
 * change the plot graph size in the sidebar
 * the plot is interactive and you can zoom in out and out and pan
 * the plot can be maximized: There is a 'fullscreen' tool at the very right side when you hover over the plot!
-* after a fit you can expand the fit results as text and can copy it
+* after a fit you can expand the fit results paragraph as text and can copy it
+* do a browser page reload (F5) to reset all parameters!
 
 
  
@@ -64,9 +70,9 @@ https://ia800308.us.archive.org/24/items/WaveguideHandbook/Marcuvitz-WaveguideHa
 
 
 
-# k factor calculation
+## k factor calculation
 
-## Conversion of detector voltage to rf reflection coefficient dP/P
+### Conversion of detector voltage to rf reflection coefficient dP/P
    
 The power is roughly a quadratic function of the RF detector voltage (n~2):  
 
@@ -91,9 +97,9 @@ $$
 $$
 
 
-## calculating conductivity $\sigma$ and conductance G from the laser power $P_{L}$   
+### calculating conductivity $\sigma$ and conductance G from the laser pulse energy density $P_{L}$   
 
-The semiconductor sample may be homogenously illuminated by lightpulses with a power density $P_{L}$ given in units of J/cm2. The sample fills the cavity with dimensions b = 10.2mm and a = 22.9mm (X-band) and it has a thickness of d. The RF electric field oscillates in the direction of the shorter side (b). If we assume that all photons having a wavelength $\lambda$ are absorbed, a carrier density of $\Delta N$ is created:
+The semiconductor sample may be homogenously illuminated by lightpulses with a energy density $P_{L}$ given in units of J/cm2. The sample fills the cavity with dimensions b = 10.2mm and a = 22.9mm (X-band) and it has a thickness of d. The RF electric field oscillates in the direction of the shorter side (b). If we assume that all photons having a wavelength $\lambda$ are absorbed, a carrier density of $\Delta N$ is created:
 
 $$
 \Delta N = \frac{P_{L} \lambda}{h c} \frac{1}{d}
@@ -121,7 +127,7 @@ With $\beta = a/b$ (=2.245 for X band)
 
 
 
-## k - factor    
+### k - factor    
 
 The sensitivty k-factor is defined by:
 

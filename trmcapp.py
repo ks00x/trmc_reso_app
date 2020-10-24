@@ -12,7 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import trmcapp_help
-import SessionState
+import SessionStateX
 
 
 def s11_func(freq_ghz,d1,d2,d_iris,loss_fac,copper_S,layer_t,layer_epsr,layer_sig,sub_t,sub_epsr,sub_sig):
@@ -34,6 +34,7 @@ def s11_func(freq_ghz,d1,d2,d_iris,loss_fac,copper_S,layer_t,layer_epsr,layer_si
     return s11.calc(freq_ghz) 
 
 
+# helper functions to auomate the fit parameter display:
 def  list_partition(list1D, columns=2):
     l = []    
     for k,p in enumerate(list1D):        
@@ -63,16 +64,19 @@ def parms_list(container,plist,kid=0):
                 plist[r*2+1]['val'] = ct[r][2].number_input(row[1]['name'],value=float(row[1]['val']),format='%1.4e',key=kid)
                 kid +=1
                 plist[r*2+1]['fixed'] = ct[r][3].checkbox('fixed',value=row[1]['fixed'],key=kid)
-    return(pl)        
+    return(pl)  
+
 
 
 st.beta_set_page_config(layout='wide',initial_sidebar_state='collapsed')
 
+# sidebar config
 help = st.sidebar.button('Help')
+show_source = st.sidebar.button('show source code')
 im_width = st.sidebar.number_input('image width',value=800)
 im_height = st.sidebar.number_input('image height',value=400)
 
-
+# init the math
 s11 = S11ghz()
 c = curve_fit(s11_func)
 c.set('d1',35.825,False)
@@ -88,13 +92,24 @@ c.set('sub_epsr',1,True)
 c.set('sub_sig',0,True)
 
 # we need the extra session state thing to feed the fitted parameters back  to the widgets
-state = SessionState.get(kfreq=8.5,paramlist=c.plist)
+state = SessionStateX._get_state()
+state(kfreq=8.5,paramlist=c.plist,fmin=8.,fmax=9.5,fstep=0.001)
+
+print(state.kfreq)
+print('\n')
 c._plist[1:] = state.paramlist
 c._calc_reduced()
+
 
 if help :    
     st.button('return')
     st.markdown(trmcapp_help.help)
+
+elif show_source:
+    st.button('return ')
+    with open('trmcapp.py','rt') as fp:
+        scode = '```' + fp.read() + '```'
+        st.markdown(scode)
 
 else :
 
@@ -106,9 +121,7 @@ else :
     area_control = st.beta_container()
     st.markdown('**parameters:**')
     area_parms = st.beta_container() 
-    pl = parms_list(area_parms,c.plist,kid=10000)
-    c._calc_reduced()
-
+    
     extdata = []
     if datastream is not None:             
         datastream.seek(0)        
@@ -123,58 +136,62 @@ else :
         btn_calc = c_cols[0].button('calculate')
         if datastream:
             btn_fit = c_cols[1].button('fit')
-        fmin = c_cols[2].number_input('fmin',value=8.0,format='%1.4f')
-        fmax = c_cols[3].number_input('fmax',value=9.2,format='%1.4f')    
-        fstep = c_cols[4].number_input('step',value=0.001,format='%1.4f')
+        state.fmin = c_cols[2].number_input('fmin',value=state.fmin,format='%1.4f')
+        state.fmax = c_cols[3].number_input('fmax',value=state.fmax,format='%1.4f')    
+        state.fstep = c_cols[4].number_input('step',value=state.fstep,format='%1.4f')
 
     with area_kfac :
         kf = st.beta_expander('k-factor calculation')
         kc = kf.beta_columns(4)
         btn_kfac = kc[0].button('calc')
-        kfac_min = kc[1].checkbox('use min?',value=True)        
-        kfac_freq = kc[2].number_input('freq in GHz',value=state.kfreq,format='%1.4f')
+        kfac_min = kc[1].checkbox('use min?',value=True)     
+        state.kfreq = kc[2].number_input('freq in GHz',value=state.kfreq,format='%1.4f')               
         kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.)
+
+
+             
+
+    # here is the action part:    
+    f = np.arange(state.fmin,state.fmax,state.fstep)
+    y = c.calc(f)
+    fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
+    if len(extdata) > 1:                
+        fig.add_trace(go.Scatter(x=extdata[:,0], y=extdata[:,1],
+            mode='markers',
+            name='data'),
+                )
+        if btn_fit:
+            c.fit(extdata[:,0],extdata[:,1])
+            yfit = c.calc(extdata[:,0])            
+            state.paramlist = c.plist
+            fig.add_trace(go.Scatter(x=extdata[:,0], y=yfit,
+            mode='markers',
+            name='fit'),
+                )
+            chisqr = ((yfit - extdata[:,1])**2).sum()
+            results = area_info.beta_expander(f'fit results (chisqr = {chisqr:1.3})')
+            results.write(c.plist)
+        
+    area_graph.plotly_chart(fig)            
+
+    if btn_kfac :
+        if kfac_min:
+            k = y.argmin()
+            state.kfreq = f[k]
+        kfac_freq = state.kfreq
+
+        s11.layer_sig = kfac_sigma
+        kf = s11.kfactor(kfac_freq,rel_change=0.01)
+        area_kfac.markdown(f'k-factor @{kfac_freq:1.4}GHz is : {kf}')
+
     
+    parms_list(area_parms,state.paramlist,kid=10000)    
+    #c._calc_reduced()
 
-    with area_graph:
-
-        if True :        
-            f = np.arange(fmin,fmax,fstep)
-            y = c.calc(f)
-            fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
-            if len(extdata) > 1:                
-                fig.add_trace(go.Scatter(x=extdata[:,0], y=extdata[:,1],
-                    mode='markers',
-                    name='imported data'),
-                     )
-                if btn_fit:
-                    c.fit(extdata[:,0],extdata[:,1])
-                    yfit = c.calc(extdata[:,0])
-                    state.paramlist = c.plist
-                    fig.add_trace(go.Scatter(x=extdata[:,0], y=yfit,
-                    mode='markers',
-                    name='fit'),
-                     )
-                    chisqr = ((yfit - extdata[:,1])**2).sum()
-                    results = area_info.beta_expander(f'fit results (chisqr = {chisqr:1.3})')
-                    results.write(c.plist)
-
-            st.plotly_chart(fig)            
-            if btn_kfac :
-                if kfac_min:
-                    k = y.argmin()
-                    kfac_freq = f[k]
-                state.kfreq = kfac_freq                    
-                s11.layer_sig = kfac_sigma
-                kf = s11.kfactor(kfac_freq,rel_change=0.01)
-                area_kfac.markdown(f'kafactor @{kfac_freq:1.4}GHz is : {kf}')
+    
+state.sync()
 
 
 
-
-        else:
-            fig = px.line(title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
-            st.plotly_chart(fig)
-            #st.markdown('no plot yet') # leaving the container emtpy causes weird problems!
-
+        
 
