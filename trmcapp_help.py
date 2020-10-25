@@ -6,7 +6,10 @@ help = r'''
    
 Klaus Schwarzburg 2020, Helmholtz Zentrum Berlin      
 
-original IGOR script function from Tom Savenije's group transcribed to a Python class   
+original IGOR script function from Tom Savenije's group transcribed to a Python class 
+
+Web Ui made with streamlit: https://www.streamlit.io/
+
    
 The model describes a 2-layer sample stack inside a microwave cavity. The 2 sample layers are refered to as substrate and sample layer. From the modeling side, both are represented by the same model and parameters: a thickness, a dieelectric contant and a conductivity. A typical example is a thin conducting layer on a thick glass substrate. By setting one of the layers to thickness=0, the model reduces to a 1 layer model.    
 
@@ -17,6 +20,7 @@ The k-factor is calculated with the formulas below and by setting the 'layer' co
 * The conductivity parameters of sample and cavity define the depth of the resonance curve
 * Before you press fit, make sure that the model function peak has some overlap with the frequency range of your uploaded data! Otherwisae the fit is likely to fail.
 * a 'fixed' model parameter is held contant during the fit
+* The script makes use of a an unofficial session interface of streamlit that has some problems. Sometimes you have to click twice to see the actual result of a calculation. 
 * The default widget size is a bit 'Fisher Price' like... Decrease your browser windows zoom to make the widgets smaller (ctrl +/- or ctrl-mousewheel)
 * change the plot graph size in the sidebar
 * the plot is interactive and you can zoom in out and out and pan

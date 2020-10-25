@@ -1,6 +1,4 @@
 import numpy as np
-import math
-import pathlib
 import io
 
 # a few custom files are used here:
@@ -12,7 +10,6 @@ from curvefit_ks import curve_fit
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import trmcapp_help
 import SessionStateX
 
@@ -149,7 +146,7 @@ else : # do some work!
         btn_kfac = kc[0].button('calc')
         kfac_min = kc[1].checkbox('use min?',value=True)     
         state.kfreq = kc[2].number_input('freq in GHz',value=state.kfreq,format='%1.4f')               
-        kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.)
+        kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.,format='%1.4f')
 
 
     # here is the action part:    
