@@ -1,5 +1,6 @@
 import numpy as np
 import io
+import base64
 
 # a few custom files are used here:
 import textdata
@@ -65,6 +66,15 @@ def parms_list(container,plist,kid=0):
                 plist[r*2+1]['fixed'] = ct[r][3].checkbox('fixed',value=row[1]['fixed'],key=kid)
     return(pl)  
 
+
+def download_link(xdata,ydata,fname,container,text='download'):
+
+    s = ''
+    for x,y in zip(xdata,ydata):
+        s += f'{x:.6} {y:.6}\n'
+    bin_str = base64.b64encode(s.encode()).decode()
+    href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{fname}">{text}</a>'
+    container.write(href, unsafe_allow_html=True)
 
 
 st.beta_set_page_config(layout='wide',initial_sidebar_state='collapsed')
@@ -152,6 +162,7 @@ else : # do some work!
     # here is the action part:    
     f = np.arange(state.fmin,state.fmax,state.fstep)
     y = c.calc(f)
+    download_link(f,y,'trmcapp.txt',area_info,'download ascii')
     fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
     if len(extdata) > 1:                
         fig.add_trace(go.Scatter(x=extdata[:,0], y=extdata[:,1],

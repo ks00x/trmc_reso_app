@@ -17,7 +17,7 @@ The k-factor is calculated with the formulas below and by setting the 'layer' co
 
 ### usage tips
 * the position of the resonance peak is mainly defined by the cavity dimensions and by the sample/layer dieelectric constant and the thickness of the layers. 
-* The conductivity parameters of sample and cavity define the depth of the resonance curve
+* The conductivity parameters of sample and cavity define the depth and width of the resonance curve
 * Before you press fit, make sure that the model function peak has some overlap with the frequency range of your uploaded data! Otherwisae the fit is likely to fail.
 * a 'fixed' model parameter is held contant during the fit
 * The script makes use of a an unofficial session interface of streamlit that has some problems. Sometimes you have to click twice to see the actual result of a calculation. 
