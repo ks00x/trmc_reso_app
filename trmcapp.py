@@ -1,3 +1,4 @@
+#
 import numpy as np
 import io
 import base64
@@ -67,9 +68,12 @@ def parms_list(container,plist,kid=0):
     return(pl)  
 
 
-def download_link(xdata,ydata,fname,container,text='download'):
+def download_link(xdata,ydata,params,fname,container,text='download'):
 
-    s = ''
+    s = '# trmcapp microwave cavity model\n# frequency in GHz\n'
+    for p in params:
+        s += f"# {p['name']} = {p['val']}, fixed = {p['fixed']}\n"
+
     for x,y in zip(xdata,ydata):
         s += f'{x:.6} {y:.6}\n'
     bin_str = base64.b64encode(s.encode()).decode()
@@ -162,7 +166,7 @@ else : # do some work!
     # here is the action part:    
     f = np.arange(state.fmin,state.fmax,state.fstep)
     y = c.calc(f)
-    download_link(f,y,'trmcapp.txt',area_info,'download ascii')
+    download_link(f,y,state.paramlist,'trmcapp.txt',area_info,'download ascii')
     fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
     if len(extdata) > 1:                
         fig.add_trace(go.Scatter(x=extdata[:,0], y=extdata[:,1],
