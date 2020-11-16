@@ -73,7 +73,6 @@ def download_link(xdata,ydata,params,fname,container,text='download'):
     s = '# trmcapp microwave cavity model\n# frequency in GHz\n'
     for p in params:
         s += f"# {p['name']} = {p['val']}, fixed = {p['fixed']}\n"
-
     for x,y in zip(xdata,ydata):
         s += f'{x:.6} {y:.6}\n'
     bin_str = base64.b64encode(s.encode()).decode()
@@ -81,7 +80,7 @@ def download_link(xdata,ydata,params,fname,container,text='download'):
     container.write(href, unsafe_allow_html=True)
 
 
-st.beta_set_page_config(layout='wide',initial_sidebar_state='collapsed')
+st.set_page_config(layout='wide',initial_sidebar_state='collapsed')
 
 # sidebar config
 help = st.sidebar.button('Help')
@@ -92,9 +91,11 @@ im_height = st.sidebar.number_input('image height',value=400)
 # init the math
 s11 = S11ghz()
 c = curve_fit(s11_func)
+
 c.set('d1',35.825,True)
 c.set('d2',11,True)
 c.set('d_iris',9.6,False)
+
 c.set('loss_fac',1e-7,False)
 c.set('copper_S',5.5e7,True)
 c.set('layer_t',0.001,True)
@@ -109,8 +110,6 @@ c.set('sub_sig',0,True)
 state = SessionStateX._get_state()
 state(kfreq=8.5,paramlist=c.plist,fmin=8.,fmax=9.1,fstep=0.001) # class __call__ method
 
-print(state.kfreq)
-print('\n')
 c._plist[1:] = state.paramlist
 c._calc_reduced()
 
@@ -121,9 +120,16 @@ if help :
 
 elif show_source:
     st.button('return ')
+    st.markdown('trmcapp.py:')
     with open('trmcapp.py','rt') as fp:
         scode = '```' + fp.read() + '```'
         st.markdown(scode)
+
+    st.markdown('trmc_network.py:')
+    with open('trmc_network.py','rt') as fp:
+        scode = '```' + fp.read() + '```'
+        st.markdown(scode)
+
 
 else : # do some work!
 
