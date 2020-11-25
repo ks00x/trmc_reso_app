@@ -18,7 +18,8 @@ The k-factor is calculated with the formulas below and by setting the 'layer' co
 ### usage tips
 * the position of the resonance peak is mainly defined by the cavity dimensions and by the sample/layer dieelectric constant and the thickness of the layers. 
 * The conductivity parameters of sample and cavity define the depth and width of the resonance curve
-* Before you press fit, make sure that the model function peak has some overlap with the frequency range of your uploaded data! Otherwisae the fit is likely to fail.
+* You can upload your microwave resonance curve for fitting by drag and drop to the upload area or by using the file selector. The format of the file needs to be 2 column text file (think csv,txt) with the first column beeing the frequency values in GHz.
+* Before you press fit, make sure that the model function peak has some overlap with the frequency range of your uploaded data! Otherwise the fit is likely to fail.
 * a 'fixed' model parameter is held contant during the fit
 * The script makes use of a an unofficial session interface of streamlit that has some problems. Sometimes you have to click twice to see the actual result of a calculation. 
 * The default widget size is a bit 'Fisher Price' like... Decrease your browser windows zoom to make the widgets smaller (ctrl +/- or ctrl-mousewheel)
@@ -28,7 +29,12 @@ The k-factor is calculated with the formulas below and by setting the 'layer' co
 * after a fit you can expand the fit results paragraph as text and can copy it
 * do a browser page reload (F5) to reset all parameters!
 
+### fitting strategy for thin film on a glass substrate samples
+Fitting all model parameters using only the resonance curve for the sample loaded cavity is not a good strategy. It is recommended to do a sequential fit procedure where you first extract the model parameteres related to the microwave cavity itself. Do like the following:    
 
+1. upload the resonance curve for the empty cavity and fit 'loss_fac' and 'd_iris'. If needed try to fit d1 or d2 as well (not both at the same time!). The geometric quantities (d1,d2,d_iris) should not deviate much from the known values. Otherwise there is some issue with the data. 
+2. Upload the resonance curve measured with only the (glass) substrate in the cavity and fit the substrate epsilon (sub_epsr). The substrate thickness should be measured precisely and entered as a fixed value (sub_t). sub_sig = 0
+3. Upload the sample resonance curve and fit layer conductivty (layer_sig) with all other parameters fixed and layer_t set to the layer thickness. The layer_epsr does not play a role for very thin (<=1um) conductive layers and can be set to 1 or any other resonable value. If this fit works well the measurements seem to be consistent. If not, you may try to fit loss_fac and probably d_iris as well. Be aware however that this indicates that some uncontrolled changes of the cavity happened when you inserted your sample/substrate. 
  
 
 
@@ -74,7 +80,8 @@ This book seems to contain all or at least most of the details:
 https://ia800308.us.archive.org/24/items/WaveguideHandbook/Marcuvitz-WaveguideHandbook.pdf
 
 
-
+Another useful, more recent technical paper is by Reid et al :   
+https://iopscience.iop.org/article/10.1088/1361-6463/aa9559/pdf   
 
 
 ## k factor calculation
