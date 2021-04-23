@@ -76,8 +76,8 @@ The study of the transient conductivity of pulse irradiated dielectric liquids o
 https://doi.org/10.1016/0146-5724(77)90044-9   
 
 
-This book seems to contain all or at least most of the details:   
-https://ia800308.us.archive.org/24/items/WaveguideHandbook/Marcuvitz-WaveguideHandbook.pdf
+This book seems to contain all or at least most of the details: 
+Marcuvitz, N.; Laboratory, M. I. of T. R. Waveguide Handbook; IET, 1951.     
 
 
 Another useful, more recent technical paper is by Reid et al :   
