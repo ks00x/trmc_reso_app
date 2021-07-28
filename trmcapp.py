@@ -1,4 +1,3 @@
-#
 import numpy as np
 import io
 import base64
@@ -13,7 +12,11 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import trmcapp_help
-import SessionStateX
+
+
+''''
+this is for streamlit version >= 0.84 using st.session_state
+'''
 
 
 def s11_func(freq_ghz,d1,d2,d_iris,loss_fac,copper_S,layer_t,layer_epsr,layer_sig,sub_t,sub_epsr,sub_sig):
@@ -47,24 +50,20 @@ def  list_partition(list1D, columns=2):
             l[-1][col] = p
     return l
 
-def parms_list(container,plist,kid=0):
+def parms_list(container,plist):
     # creates a 
-    cols = 2
+    cols = 2 # works only for 2 columns !!!
     pl = list_partition(plist,cols)
     
     with container:
-        ct = [None]*len(pl)
-        #kid = 1
+        ct = [None]*len(pl)        
         for r,row in enumerate(pl):                    
             ct[r] = st.beta_columns(2*cols)
-            plist[r*cols]['val'] = ct[r][0].number_input(row[0]['name'],value=float(row[0]['val']),format='%1.4e',key=kid)
-            kid +=1
-            plist[r*cols]['fixed'] = ct[r][1].checkbox('fixed',value=row[0]['fixed'],key=kid)
-            kid +=1
+            plist[r*cols]['val'] = ct[r][0].number_input(row[0]['name'],value=float(row[0]['val']),format='%1.4e',key=row[0]['name'])            
+            plist[r*cols]['fixed'] = ct[r][1].checkbox('fixed',value=row[0]['fixed'],key=f"{row[0]['name']}_check")        
             if cols>1 and row[1] :
-                plist[r*2+1]['val'] = ct[r][2].number_input(row[1]['name'],value=float(row[1]['val']),format='%1.4e',key=kid)
-                kid +=1
-                plist[r*2+1]['fixed'] = ct[r][3].checkbox('fixed',value=row[1]['fixed'],key=kid)
+                plist[r*2+1]['val'] = ct[r][2].number_input(row[1]['name'],value=float(row[1]['val']),format='%1.4e',key=row[1]['name'])                
+                plist[r*2+1]['fixed'] = ct[r][3].checkbox('fixed',value=row[1]['fixed'],key=f"{row[1]['name']}_check")                
     return(pl)  
 
 
@@ -80,66 +79,37 @@ def download_link(xdata,ydata,params,fname,container,text='download'):
     container.write(href, unsafe_allow_html=True)
 
 
-st.set_page_config(layout='wide',initial_sidebar_state='collapsed')
-
-# sidebar config
-help = st.sidebar.button('Help')
-show_source = st.sidebar.button('show source code')
-im_width = st.sidebar.number_input('image width',value=800)
-im_height = st.sidebar.number_input('image height',value=400)
-
-# init the math
-s11 = S11ghz()
-c = curve_fit(s11_func)
-
-c.set('d1',35.825,True)
-c.set('d2',11,True)
-c.set('d_iris',9.6,False)
-
-c.set('loss_fac',1e-7,False)
-c.set('copper_S',5.5e7,True)
-c.set('layer_t',0.001,True)
-c.set('layer_epsr',1,True)
-c.set('layer_sig',0,True)
-c.set('sub_t',1,True) # by adding a substrate with eps=1 we account for the proper total cavity length
-c.set('sub_epsr',1,False)
-c.set('sub_sig',0,True)
-
-# we need the extra session state thing to feed the fitted parameters back  to the widgets
-# not sure why the explicit state for fmin,fmax,fstep is needed, bug?
-state = SessionStateX._get_state()
-state(kfreq=8.5,paramlist=c.plist,fmin=8.,fmax=9.1,fstep=0.001) # class __call__ method
-
-c._plist[1:] = state.paramlist
-c._calc_reduced()
-
-
-if help :    
+def show_help():
     st.button('return')
     st.markdown(trmcapp_help.help)
 
-elif show_source:
-    st.button('return ')
-    st.markdown('trmcapp.py:')
-    with open('trmcapp.py','rt') as fp:
-        scode = '```' + fp.read() + '```'
-        st.markdown(scode)
-
+def show_source():
+    st.button('return')
     st.markdown('trmc_network.py:')
     with open('trmc_network.py','rt') as fp:
         scode = '```' + fp.read() + '```'
         st.markdown(scode)
 
 
-else : # do some work!
 
+def main():
+
+    def do_fit():
+        if len(extdata) > 1: 
+            c.fit(extdata[:,0],extdata[:,1])
+            yfit = c.calc(extdata[:,0])  
+            st.session_state['fit_done'] = True                      
+            st.session_state['fit_y'] = yfit
+            st.session_state['fit_chi2'] = ((yfit - extdata[:,1])**2).sum()        
+        else : 
+            st.session_state['fit_done'] = False                      
+   
     # set the order of gui elements by defining containers:
     area_graph = st.beta_container()
     area_info = st.beta_container()
     area_kfac = st.beta_container()
     datastream = st.file_uploader('ascii tab data with f in GHz',)    
-    area_control = st.beta_container()
-    st.markdown('**parameters:**')
+    area_control = st.beta_container()    
     area_parms = st.beta_container() 
     
     extdata = []
@@ -152,62 +122,96 @@ else : # do some work!
         extdata = np.array(extdata['data'])            
 
     with area_control :
-        c_cols = st.beta_columns(5)
-        btn_calc = c_cols[0].button('calculate')
+        c_cols = st.beta_columns((1,2,2,2))        
         if datastream:
-            btn_fit = c_cols[1].button('fit')
-        state.fmin = c_cols[2].number_input('fmin',value=state.fmin,format='%1.4f')
-        state.fmax = c_cols[3].number_input('fmax',value=state.fmax,format='%1.4f')    
-        state.fstep = c_cols[4].number_input('step',value=state.fstep,format='%1.4f')
+            btn_fit = c_cols[0].button('fit',on_click=do_fit)
+        fmin = c_cols[1].number_input('fmin',value=8.4,format='%1.4f')
+        fmax = c_cols[2].number_input('fmax',value=9.2,format='%1.4f')    
+        fstep = c_cols[3].number_input('step',value=0.001,format='%1.4f')
+        st.markdown('**parameters:**')
+        pf = st.form('pform')
+        pf.form_submit_button('calculate resonance')#,on_click=store_parameters)
+        parms_list(pf,c._plist[1:])  
+        c._calc_reduced()
+        f = np.arange(fmin,fmax,fstep)
+        y = c.calc(f)
+        download_link(f,y,c._plist[1:],'trmcapp.txt',area_info,'download ascii')
 
     with area_kfac :
         kf = st.beta_expander('k-factor calculation')
         kc = kf.beta_columns(4)
         btn_kfac = kc[0].button('calc')
-        kfac_min = kc[1].checkbox('use min?',value=True)     
-        state.kfreq = kc[2].number_input('freq in GHz',value=state.kfreq,format='%1.4f')               
+        kfac_min = kc[1].checkbox('use min?',value=True,key='kfac_min')     
+        kc[2].number_input('freq in GHz',format='%1.4f',key='kfreq')               
         kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.,format='%1.4f')
-
-
-    # here is the action part:    
-    f = np.arange(state.fmin,state.fmax,state.fstep)
-    y = c.calc(f)
-    download_link(f,y,state.paramlist,'trmcapp.txt',area_info,'download ascii')
+        if btn_kfac :
+            if kfac_min:
+                k = y.argmin()
+                kfreq = f[k]
+            kfac_freq = kfreq
+            s11.layer_sig = kfac_sigma
+            kf = s11.kfactor(kfac_freq,rel_change=0.01)            
+            st.markdown(f'k-factor @{kfac_freq:1.4}GHz is : {kf}')
+    
     fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
+         
     if len(extdata) > 1:                
         fig.add_trace(go.Scatter(x=extdata[:,0], y=extdata[:,1],
             mode='markers',
             name='data'),
                 )
-        if btn_fit:
-            c.fit(extdata[:,0],extdata[:,1])
-            yfit = c.calc(extdata[:,0])            
-            state.paramlist = c.plist
-            fig.add_trace(go.Scatter(x=extdata[:,0], y=yfit,
-            mode='markers',
-            name='fit'),
-                )
-            chisqr = ((yfit - extdata[:,1])**2).sum()
-            results = area_info.beta_expander(f'fit results (chisqr = {chisqr:1.3})')
-            results.write(c.plist)
-        
+    if st.session_state['fit_done'] :                              
+        fig.add_trace(go.Scatter(x=extdata[:,0], y=st.session_state['fit_y'],
+        mode='markers',
+        name='fit'),
+            )
+        chisqr = st.session_state['fit_chi2']                      
+        results = area_info.beta_expander(f'fit results (chisqr = {chisqr:1.3})')
+        results.write(c.plist)
+    
     area_graph.plotly_chart(fig)            
 
-    if btn_kfac :
-        if kfac_min:
-            k = y.argmin()
-            state.kfreq = f[k]
-        kfac_freq = state.kfreq
-
-        s11.layer_sig = kfac_sigma
-        kf = s11.kfactor(kfac_freq,rel_change=0.01)
-        area_kfac.markdown(f'k-factor @{kfac_freq:1.4}GHz is : {kf}')
+   
+    for key,val in st.session_state.items():
+        print(key," : ",val)
     
-    parms_list(area_parms,state.paramlist,kid=10000)        
+ 
+
+
+##################### init sequence #########################
+
+st.set_page_config(layout='wide',initial_sidebar_state='collapsed')
+
+# sidebar config
+help = st.sidebar.button('Help')
+source = st.sidebar.button('show source code')
+im_width = st.sidebar.number_input('image width',value=800)
+im_height = st.sidebar.number_input('image height',value=400)
+
+if 'app_init' not in st.session_state:
+    st.session_state['app_init'] = True
+    s11 = S11ghz()
+    c = curve_fit(s11_func)
+    c.set('d1',35.825,True)
+    c.set('d2',11,True)
+    c.set('d_iris',9.6,False)
+    c.set('loss_fac',1e-7,False)
+    c.set('copper_S',5.5e7,True)
+    c.set('layer_t',0.001,True)
+    c.set('layer_epsr',1,True)
+    c.set('layer_sig',0,True)
+    c.set('sub_t',1,True)
+    c.set('sub_epsr',1,False)
+    c.set('sub_sig',0,True)
+    st.session_state['s11'] = s11
+    st.session_state['cfit'] = c
+    st.session_state['fit_done'] = False
     
-state.sync()
+else :
+    s11 =  st.session_state['s11']
+    c = st.session_state['cfit']
 
 
-
-        
-
+if help : show_help()
+elif source : show_source()
+else: main()

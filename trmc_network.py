@@ -29,7 +29,6 @@ https://doi.org/10.1016/0146-5724(77)90044-9
 
 This book seems to contain all or at least most of the details
 Marcuvitz, N.; Laboratory, M. I. of T. R. Waveguide Handbook; IET, 1951.     
-https://ia800308.us.archive.org/24/items/WaveguideHandbook/Marcuvitz-WaveguideHandbook.pdf
 
 '''
 
