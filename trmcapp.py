@@ -1,10 +1,10 @@
+from logging import StreamHandler
 import numpy as np
 import io
 import base64
 
 # a few custom files are used here:
 import textdata
-import physbits
 from trmc_network import S11ghz
 from curvefit_ks import curve_fit
 
@@ -13,11 +13,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import trmcapp_help
 
-
 ''''
 this is for streamlit version >= 0.84 using st.session_state
 '''
-
 
 def s11_func(freq_ghz,d1,d2,d_iris,loss_fac,copper_S,layer_t,layer_epsr,layer_sig,sub_t,sub_epsr,sub_sig):
     # helper function for fitting
@@ -91,7 +89,6 @@ def show_source():
         st.markdown(scode)
 
 
-
 def main():
 
     def do_fit():
@@ -102,25 +99,40 @@ def main():
             st.session_state['fit_y'] = yfit
             st.session_state['fit_chi2'] = ((yfit - extdata[:,1])**2).sum()        
         else : 
-            st.session_state['fit_done'] = False                      
+            st.session_state['fit_done'] = False   
+
+    def do_kfac():         
+        if kfac_min:
+            k = y.argmin()
+            st.session_state['kfreq'] = f[k]        
+        s11.layer_sig = kfac_sigma
+        st.session_state['kfac'] = s11.kfactor(st.session_state['kfreq'],rel_change=0.01)         
+
+    @st.cache()
+    def load_data(datastream):        
+        if datastream is not None: # process uploaded file            
+            datastream.seek(0)        
+            buf = datastream.read()
+            buf = io.BytesIO(buf)
+            stream = io.TextIOWrapper(buf)        
+            data = textdata.read_textdata(stream)
+            data = np.array(data['data']) 
+            print('filedata loaded') 
+            return data  
+        else : 
+            return []        
+                
    
     # set the order of gui elements by defining containers:
     area_graph = st.beta_container()
     area_info = st.beta_container()
     area_kfac = st.beta_container()
-    datastream = st.file_uploader('ascii tab data with f in GHz',)    
+    datastream = st.file_uploader('ascii tab data with f in GHz')    
     area_control = st.beta_container()    
-    area_parms = st.beta_container() 
+    #area_parms = st.beta_container() 
+        
+    extdata = load_data(datastream)
     
-    extdata = []
-    if datastream is not None: # process uploaded file            
-        datastream.seek(0)        
-        buf = datastream.read()
-        buf = io.BytesIO(buf)
-        stream = io.TextIOWrapper(buf)        
-        extdata = textdata.read_textdata(stream)
-        extdata = np.array(extdata['data'])            
-
     with area_control :
         c_cols = st.beta_columns((1,2,2,2))        
         if datastream:
@@ -137,23 +149,18 @@ def main():
         y = c.calc(f)
         download_link(f,y,c._plist[1:],'trmcapp.txt',area_info,'download ascii')
 
-    with area_kfac :
-        kf = st.beta_expander('k-factor calculation')
+    with area_kfac :        
+        kfe = st.beta_expander('k-factor calculation')
+        kf  = kfe.form('kfacform')
         kc = kf.beta_columns(4)
-        btn_kfac = kc[0].button('calc')
+        btn_kfac = kc[0].form_submit_button('calc',on_click=do_kfac)
         kfac_min = kc[1].checkbox('use min?',value=True,key='kfac_min')     
         kc[2].number_input('freq in GHz',format='%1.4f',key='kfreq')               
-        kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.,format='%1.4f')
-        if btn_kfac :
-            if kfac_min:
-                k = y.argmin()
-                kfreq = f[k]
-            kfac_freq = kfreq
-            s11.layer_sig = kfac_sigma
-            kf = s11.kfactor(kfac_freq,rel_change=0.01)            
-            st.markdown(f'k-factor @{kfac_freq:1.4}GHz is : {kf}')
+        kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.,format='%1.4f')        
+        if btn_kfac:
+            st.markdown(f'k-factor @{st.session_state.kfreq:1.4}GHz is : {st.session_state.kfac}')
     
-    fig = px.line(x=f,y=y,log_y=False,title='plotly express',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
+    fig = px.line(x=f,y=y,log_y=False,title='trmc resonance curve',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
          
     if len(extdata) > 1:                
         fig.add_trace(go.Scatter(x=extdata[:,0], y=extdata[:,1],
@@ -170,25 +177,24 @@ def main():
         results.write(c.plist)
     
     area_graph.plotly_chart(fig)            
-
    
-    for key,val in st.session_state.items():
-        print(key," : ",val)
+    # for key,val in st.session_state.items():
+    #     print(key," : ",val)
     
- 
-
 
 ##################### init sequence #########################
 
 st.set_page_config(layout='wide',initial_sidebar_state='collapsed')
 
 # sidebar config
+st.sidebar.header('trmcapp\n')
 help = st.sidebar.button('Help')
 source = st.sidebar.button('show source code')
 im_width = st.sidebar.number_input('image width',value=800)
 im_height = st.sidebar.number_input('image height',value=400)
+btn_reset = st.sidebar.button("reset",help="reset cache and return to default values")
 
-if 'app_init' not in st.session_state:
+if 'app_init' not in st.session_state or btn_reset:
     st.session_state['app_init'] = True
     s11 = S11ghz()
     c = curve_fit(s11_func)
@@ -210,7 +216,6 @@ if 'app_init' not in st.session_state:
 else :
     s11 =  st.session_state['s11']
     c = st.session_state['cfit']
-
 
 if help : show_help()
 elif source : show_source()
