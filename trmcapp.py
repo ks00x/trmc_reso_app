@@ -12,9 +12,19 @@ import plotly.express as px
 import plotly.graph_objects as go
 import trmcapp_help
 
-''''
-this is for streamlit version >= 0.84 using st.session_state
-'''
+
+st.set_page_config(layout='wide',initial_sidebar_state='collapsed')
+
+# ''''
+# this is for streamlit version >= 1 using st.session_state
+
+# git remote add trmcapp2  https://git.heroku.com/trmcapp2.git
+# git push trmcapp2 master
+
+# '''
+
+
+
 
 def s11_func(freq_ghz,d1,d2,d_iris,loss_fac,copper_S,layer_t,layer_epsr,layer_sig,sub_t,sub_epsr,sub_sig):
     # helper function for fitting
@@ -55,7 +65,7 @@ def parms_list(container,plist):
     with container:
         ct = [None]*len(pl)        
         for r,row in enumerate(pl):                    
-            ct[r] = st.beta_columns(2*cols)
+            ct[r] = st.columns(2*cols)
             plist[r*cols]['val'] = ct[r][0].number_input(row[0]['name'],value=float(row[0]['val']),format='%1.4e',key=row[0]['name'])            
             plist[r*cols]['fixed'] = ct[r][1].checkbox('fixed',value=row[0]['fixed'],key=f"{row[0]['name']}_check")        
             if cols>1 and row[1] :
@@ -123,17 +133,17 @@ def main():
                 
    
     # set the order of gui elements by defining containers:
-    area_graph = st.beta_container()
-    area_info = st.beta_container()
-    area_kfac = st.beta_container()
+    area_graph = st.container()
+    area_info = st.container()
+    area_kfac = st.container()
     datastream = st.file_uploader('ascii tab data with f in GHz')    
-    area_control = st.beta_container()    
+    area_control = st.container()    
     #area_parms = st.beta_container() 
         
     extdata = load_data(datastream)
     
     with area_control :
-        c_cols = st.beta_columns((1,2,2,2))        
+        c_cols = st.columns((1,2,2,2))        
         if datastream:
             btn_fit = c_cols[0].button('fit',on_click=do_fit)
         fmin = c_cols[1].number_input('fmin',value=8.4,format='%1.4f')
@@ -149,9 +159,9 @@ def main():
         download_link(f,y,c._plist[1:],'trmcapp.txt',area_info,'download ascii')
 
     with area_kfac :        
-        kfe = st.beta_expander('k-factor calculation')
+        kfe = st.expander('k-factor calculation')
         kf  = kfe.form('kfacform')
-        kc = kf.beta_columns(4)
+        kc = kf.columns(4)
         btn_kfac = kc[0].form_submit_button('calc',on_click=do_kfac)
         kfac_min = kc[1].checkbox('use min?',value=True,key='kfac_min')     
         kc[2].number_input('freq in GHz',format='%1.4f',key='kfreq')               
@@ -172,7 +182,7 @@ def main():
         name='fit'),
             )
         chisqr = st.session_state['fit_chi2']                      
-        results = area_info.beta_expander(f'fit results (chisqr = {chisqr:1.3})')
+        results = area_info.expander(f'fit results (chisqr = {chisqr:1.3})')
         results.write(c.plist)
     
     area_graph.plotly_chart(fig)            
@@ -183,10 +193,10 @@ def main():
 
 ##################### init sequence #########################
 
-st.set_page_config(layout='wide',initial_sidebar_state='collapsed')
+
 
 # sidebar config
-st.sidebar.header('trmcapp\n')
+st.sidebar.header('trmcapp2\n')
 help = st.sidebar.button('Help')
 source = st.sidebar.button('show source code')
 im_width = st.sidebar.number_input('image width',value=800)
