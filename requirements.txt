@@ -1,4 +1,4 @@
-streamlit==1.00
+streamlit==1.1
 plotly
 scipy
 nptdms
