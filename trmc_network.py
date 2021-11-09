@@ -165,7 +165,7 @@ class S11ghz():
             back = 1    
         t_in_m = (self.layer_t*1e-3)
         r0 = self.calc(freq_in_ghz)        
-        self.layer_sig *= 1 + rel_change # increase the conductance
+        self.layer_sig *= (1 + rel_change) # increase the conductance
         dg = (self.layer_sig - back) * t_in_m # change in conductivity
         r1 = self.calc(freq_in_ghz)        
         self.layer_sig = tmp
@@ -203,28 +203,37 @@ class S11ghz_Ka(S11ghz):
     
 if __name__ == "__main__":
     
-    import quickyplot as qp
-    q = qp.quickyplot('Toms formula',ptype='LINE',label_loc='upper right',
-                    xlabel='frequency [GHz]',ylabel='S11')
-
-    #f = np.arange(8.1,9,0.001)
-    f = np.arange(25,40,0.01)
-
-    s = S11ghz_Ka()
-    print(vars(s))
-
-    s.sub_t = 0.0001
-    s.sub_epsr =1
-    s.layer_sig = 1/2.4
-    s.layer_t = 0.35
-    s.layer_epsr=12
-
-    s11 = [s.calc(x) for x in f]
-    q.addplotxy(f,s11,'Si')
-
-    q.show()
-
-    print(f'k-factor = {s.kfactor(8.317)}')
-    print('a FEM simulation with the given parameters gives roughly k = 3000')
+    
+    import numpy as np
+    #from trmc_network import S11ghz
+    import matplotlib.pyplot as plt
 
 
+    f = np.arange(8.1,9.2,0.001)
+    #f = np.arange(25,40,0.01)
+
+    s = S11ghz()
+
+    s.a = 22.86          # long side of waveguide in mm 
+    s.b = 10.16          # short side of waveguide in mm 
+    s.d1 = 36            # first distance in mm, distance between sample and cavity end
+    s.d2 = 12            # 'complementary' distance in mm
+    s.d_iris =  9.6      # iris diameter in mm, making this large (>=100) practically removes the iris 
+    s.copper_S = 5.5e7   # copper conductivity
+    s.loss_fac = 1e-7    # copper loss adjustment 
+    s.layer_t = 0.001    # layer thickness in mm
+    s.layer_epsr = 1     # dieelectric constant layer
+    s.layer_sig = 0.1      # conductance layer S/m
+    s.sub_t = 1          # substrate thickness in mm
+    s.sub_epsr = 3.6     # substrate (quartz) epsr
+    s.sub_sig = 0        # substrate (quartz) sigma S/m
+
+
+    print(vars(s))    
+    s11 = s.calc(f)        
+    k = s11.argmin()
+
+    print(f[k])
+
+    print(f'k-factor = {s.kfactor(f[k])}')
+    
