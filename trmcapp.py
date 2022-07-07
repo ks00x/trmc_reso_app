@@ -145,7 +145,7 @@ def main():
     with area_control :
         c_cols = st.columns((1,2,2,2))        
         if datastream:
-            btn_fit = c_cols[0].button('fit',on_click=do_fit)
+            btn_fit = c_cols[0].button('fit model',on_click=do_fit)
         fmin = c_cols[1].number_input('fmin',value=8.4,format='%1.4f')
         fmax = c_cols[2].number_input('fmax',value=9.2,format='%1.4f')    
         fstep = c_cols[3].number_input('step',value=0.001,format='%1.4f')

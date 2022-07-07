@@ -4,3 +4,8 @@ __pycache__
 quartz.txt
 trmcapp_v1.py
 SessionStateX.py
+requirements.txt
+Procfile
+test.ipynb
+setup.sh
+runtime.txt

@@ -172,6 +172,20 @@ class S11ghz():
         kfac  = (r1-r0)/(r0*dg*beta)
         return( kfac )
 
+    def kfactor_abs(self,freq_in_ghz,delta_sig=0.1): 
+        'calculate the k-factor using the current layer conductivity and solving for an incremental increase'
+        beta = self.a / self.b
+        #beta = 2.24  
+        tmp = self.layer_sig      
+        t_in_m = (self.layer_t*1e-3)
+        r0 = self.calc(freq_in_ghz)        
+        self.layer_sig += delta_sig # increase the conductance
+        dg = delta_sig * t_in_m # change in conductivity
+        r1 = self.calc(freq_in_ghz)        
+        self.layer_sig = tmp
+        kfac  = (r1-r0)/(r0*dg*beta)
+        return( kfac )
+
 
 
 
