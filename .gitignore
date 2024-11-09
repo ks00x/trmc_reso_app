@@ -6,6 +6,8 @@ quartz.txt
 trmcapp_v1.py
 SessionStateX.py
 Procfile
+Dockerfile
 test.ipynb
 setup.sh
 runtime.txt
+temp*

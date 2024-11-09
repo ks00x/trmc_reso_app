@@ -1,5 +1,5 @@
 plotly
 scipy
 nptdms
-
+streamlit>=1.20
 

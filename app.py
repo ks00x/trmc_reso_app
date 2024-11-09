@@ -11,15 +11,19 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import trmcapp_help
+import streamlit_param as stp
 
 
-st.set_page_config(layout='wide',initial_sidebar_state='collapsed')
+st.set_page_config(layout='wide',initial_sidebar_state='collapsed',page_title='TRMC cavity resonance calculator',page_icon='📶')
+session = st.session_state
+__version__ = 1.02
+
 
 # ''''
-# this is for streamlit version >= 1 using st.session_state
+# this is for streamlit version >= 1.12 using session
+# changes to @cache for version 1.20
 
-# git remote add trmcapp2  https://git.heroku.com/trmcapp2.git
-# git push trmcapp2 master
+# git push hzb HEAD:master
 
 # '''
 
@@ -44,34 +48,6 @@ def s11_func(freq_ghz,d1,d2,d_iris,loss_fac,copper_S,layer_t,layer_epsr,layer_si
     # return np.array([s11.calc(x) for x in freq_ghz]) # freq_ghz is an array! , non numpy version   
     return s11.calc(freq_ghz) 
 
-
-# helper functions to auomate the fit parameter display:
-def  list_partition(list1D, columns=2):
-    l = []    
-    for k,p in enumerate(list1D):        
-        col = k % columns        
-        if col == 0  :            
-            l.append([p] + [None]*(columns-1))     
-            l[-1][0] = p       
-        else :
-            l[-1][col] = p
-    return l
-
-def parms_list(container,plist):
-    # creates a 
-    cols = 2 # works only for 2 columns !!!
-    pl = list_partition(plist,cols)
-    
-    with container:
-        ct = [None]*len(pl)        
-        for r,row in enumerate(pl):                    
-            ct[r] = st.columns(2*cols)
-            plist[r*cols]['val'] = ct[r][0].number_input(row[0]['name'],value=float(row[0]['val']),format='%1.4e',key=row[0]['name'])            
-            plist[r*cols]['fixed'] = ct[r][1].checkbox('fixed',value=row[0]['fixed'],key=f"{row[0]['name']}_check")        
-            if cols>1 and row[1] :
-                plist[r*2+1]['val'] = ct[r][2].number_input(row[1]['name'],value=float(row[1]['val']),format='%1.4e',key=row[1]['name'])                
-                plist[r*2+1]['fixed'] = ct[r][3].checkbox('fixed',value=row[1]['fixed'],key=f"{row[1]['name']}_check")                
-    return(pl)  
 
 
 def download_link(xdata,ydata,params,fname,container,text='download'):
@@ -102,22 +78,25 @@ def main():
 
     def do_fit():
         if len(extdata) > 1: 
-            c.fit(extdata[:,0],extdata[:,1])
-            yfit = c.calc(extdata[:,0])  
-            st.session_state['fit_done'] = True                      
-            st.session_state['fit_y'] = yfit
-            st.session_state['fit_chi2'] = ((yfit - extdata[:,1])**2).sum()        
+            try:
+                c.fit(extdata[:,0],extdata[:,1])            
+                yfit = c.calc(extdata[:,0])  
+                session['fit_y'] = yfit
+                session['fit_chi2'] = ((yfit - extdata[:,1])**2).sum()        
+            except RuntimeError:
+                st.error('fit did fail!')
+            session['fit_done'] = True                                  
         else : 
-            st.session_state['fit_done'] = False   
+            session['fit_done'] = False   
 
     def do_kfac():         
         if kfac_min:
             k = y.argmin()
-            st.session_state['kfreq'] = f[k]        
+            session['kfreq'] = f[k]        
         s11.layer_sig = kfac_sigma
-        st.session_state['kfac'] = s11.kfactor(st.session_state['kfreq'],rel_change=0.01)         
+        session['kfac'] = s11.kfactor(session['kfreq'],rel_change=0.01)         
 
-    @st.cache()
+    @st.cache_data()
     def load_data(datastream):        
         if datastream is not None: # process uploaded file            
             datastream.seek(0)        
@@ -126,34 +105,35 @@ def main():
             stream = io.TextIOWrapper(buf)        
             data = textdata.read_textdata(stream)
             data = np.array(data['data']) 
-            print('filedata loaded') 
+            if session.frequnit == "Hz" :
+                data[:,0] = data[:,0] / 1e9
+            elif session.frequnit == "MHz" :
+                data[:,0] = data[:,0] / 1e3            
             return data  
         else : 
             return []        
-                
+
+    def reset_values():
+        del session.app_init
+
    
     # set the order of gui elements by defining containers:
-    area_graph = st.container()
-    area_info = st.container()
-    area_kfac = st.container()
-    datastream = st.file_uploader('ascii tab data with f in GHz')    
-    area_control = st.container()    
-    #area_parms = st.beta_container() 
-        
-    extdata = load_data(datastream)
+    lcol,rcol = st.columns((1,3))
+    area_graph = rcol.container()
+    area_info = lcol.container()
+    area_kfac = st.container()    
+    datastream = lcol.file_uploader(f'ascii 2 column f in {session.frequnit}',help='ascii 2 column (f,S) tab data')    
     
-    with area_control :
-        c_cols = st.columns((1,2,2,2))        
-        if datastream:
-            btn_fit = c_cols[0].button('fit model',on_click=do_fit)
-        fmin = c_cols[1].number_input('fmin',value=8.4,format='%1.4f')
-        fmax = c_cols[2].number_input('fmax',value=9.2,format='%1.4f')    
-        fstep = c_cols[3].number_input('step',value=0.001,format='%1.4f')
+    area_control = st.container()                 
+    extdata = load_data(datastream)
+    lcol.button('reset values',on_click=reset_values)
+    if datastream:
+            btn_fit = lcol.button('fit model',on_click=do_fit)
+    with area_control :                
         st.markdown('**parameters:**')
-        pf = st.form('pform')
-        pf.form_submit_button('calculate resonance')#,on_click=store_parameters)
-        parms_list(pf,c._plist[1:])  
+        session.plobj.create(c._plist[1:],st,format='%1.5g')
         c._calc_reduced()
+        #session.cfit = c
         f = np.arange(fmin,fmax,fstep)
         y = c.calc(f)
         download_link(f,y,c._plist[1:],'trmcapp.txt',area_info,'download ascii')
@@ -165,9 +145,9 @@ def main():
         btn_kfac = kc[0].form_submit_button('calc',on_click=do_kfac)
         kfac_min = kc[1].checkbox('use min?',value=True,key='kfac_min')     
         kc[2].number_input('freq in GHz',format='%1.4f',key='kfreq')               
-        kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=1.,format='%1.4f')        
+        kfac_sigma = kc[3].number_input('layer sigma [S/m]',value=0.1,format='%1.4f')        
         if btn_kfac:
-            st.markdown(f'k-factor @{st.session_state.kfreq:1.4}GHz is : {st.session_state.kfac}')
+            st.markdown(f'k-factor @{session.kfreq:1.4}GHz is : {session.kfac}')
     
     fig = px.line(x=f,y=y,log_y=False,title='trmc resonance curve',labels={'x':'frequency GHz','y':'S11 reflectivity'},height=im_height,width=im_width)
          
@@ -176,35 +156,39 @@ def main():
             mode='markers',
             name='data'),
                 )
-    if st.session_state['fit_done'] :                              
-        fig.add_trace(go.Scatter(x=extdata[:,0], y=st.session_state['fit_y'],
+    if session['fit_done'] :                              
+        fig.add_trace(go.Scatter(x=extdata[:,0], y=session['fit_y'],
         mode='markers',
         name='fit'),
             )
-        chisqr = st.session_state['fit_chi2']                      
+        chisqr = session['fit_chi2']                      
         results = area_info.expander(f'fit results (chisqr = {chisqr:1.3})')
         results.write(c.plist)
     
     area_graph.plotly_chart(fig)            
    
-    # for key,val in st.session_state.items():
-    #     print(key," : ",val)
     
-
 ##################### init sequence #########################
 
-
-
 # sidebar config
-st.sidebar.header('trmcapp2\n')
-help = st.sidebar.button('Help')
-source = st.sidebar.button('show source code')
-im_width = st.sidebar.number_input('image width',value=800)
-im_height = st.sidebar.number_input('image height',value=400)
-btn_reset = st.sidebar.button("reset",help="reset cache and return to default values")
+with st.sidebar :
+    st.header(f'trmcapp V{__version__}\n')
+    help = st.button('Help')
+    source = st.button('show source code')
+    st.selectbox('data frequency units',['Hz','MHz','GHz'],index=1,key="frequnit")
+    im_width = st.number_input('image width',value=800)
+    im_height = st.number_input('image height',value=400)
+    param_cols = st.number_input('nr of parameter columns',value=2)
+    btn_reset = st.button("reset",help="reset cache and return to default values")
+    st.write('### resonance plot:')
+    fmin = st.number_input('fmin',value=8.2,format='%1.4f')
+    fmax = st.number_input('fmax',value=9.2,format='%1.4f')    
+    fstep = st.number_input('step',value=0.001,format='%1.4f')
 
-if 'app_init' not in st.session_state or btn_reset:
-    st.session_state['app_init'] = True
+session.plobj = stp.paramlist(cols=param_cols)
+
+if 'app_init' not in session or btn_reset:
+    session['app_init'] = True
     s11 = S11ghz()
     c = curve_fit(s11_func)
     c.set('d1',35.825,True)
@@ -218,13 +202,13 @@ if 'app_init' not in st.session_state or btn_reset:
     c.set('sub_t',1,True)
     c.set('sub_epsr',1,False)
     c.set('sub_sig',0,True)
-    st.session_state['s11'] = s11
-    st.session_state['cfit'] = c
-    st.session_state['fit_done'] = False
-    
+    session['s11'] = s11
+    session['cfit'] = c
+    session['fit_done'] = False        
 else :
-    s11 =  st.session_state['s11']
-    c = st.session_state['cfit']
+    s11 =  session['s11']
+    c = session['cfit']
+
 
 if help : show_help()
 elif source : show_source()
